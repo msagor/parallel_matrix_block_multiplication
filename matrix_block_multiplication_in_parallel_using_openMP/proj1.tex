@@ -1,0 +1,132 @@
+\documentclass[11pt]{article}
+% \textwidth=6in
+% \textheight=9in
+% \oddsidemargin=0.25in
+% \evensidemargin=0.25in
+% \marginparwidth=0in
+% \marginparsep=0in
+% \topmargin=0in
+% \headheight=0in
+% \headsep=0in
+% \topskip=0in
+\usepackage{hyperref}
+\usepackage{lscape}
+\usepackage{longtable}
+\usepackage{graphics}
+\usepackage[pdftex]{graphicx}
+\usepackage{color}
+\usepackage{rotating}
+\newcommand{\hilight}[1]{\colorbox{yellow}{#1}}
+
+\newenvironment{packed_itemize}{
+\begin{itemize}
+  \setlength{\itemsep}{1pt}
+  \setlength{\parskip}{0pt}
+  \setlength{\parsep}{0pt}
+}{\end{itemize}}
+
+\title{CSCE 435 Parallel Computing, Fall 2017 \\
+Project 1: parallel matrix multiplication}
+\author{Tim Davis}
+\date{Assigned Monday, Sept 25.  Due at 2pm on Tuesday, Oct 3}
+\begin{document}
+
+\maketitle
+
+In this project you will write three matrix multiplication methods
+and compare their performance:
+
+\begin{itemize}
+\item The first one is the simple method
+in Problem 2.4 in the book.  This method will also be used 
+to multiply each block in the second and third methods.
+
+\item The second method is a sequential one, with no OpenMP parallelism,
+but it computes its result \verb'C=A*B' by blocks, as in the solution to
+Problem 2.5 from homework 1.
+
+\item The third method is just like the second method, except that it
+uses 20 threads (the number of cores on each node of ADA) to compute the
+blocks of \verb'C' in parallel.
+
+\end{itemize}
+
+Each of the methods will be test on a single set of square matrices of
+size 2048, but with different block sizes for methods 2 and 3.
+
+I have written some of this project for you to get you started.
+See the \verb'proj1.zip' file.  The \verb'mult.c' file contains the main
+test program and skeletons of the three functions you need to write.
+It also provides a helper macro called \verb'SUBMATRIX' that gives you a
+simple method of passing submatrices to a function:
+
+\begin{verbatim}
+#define SUBMATRIX(C,I,J,b) ((double (*)[NMAX]) & (C [I*b][J*b]))
+\end{verbatim}
+
+Suppose \verb'A' is a 2D array of size \verb'NMAX'-by-\verb'NMAX', defined
+as:
+
+\begin{verbatim}
+double A [NMAX][NMAX] ;
+\end{verbatim}
+
+A submatrix can be passed to a function \verb'func' using, for exampe:
+
+\begin{verbatim}
+func (SUBMATRIX (A, 2, 5, 8), 8) ;
+\end{verbatim}
+
+where \verb'func' is defined as
+
+\begin{verbatim}
+void func (double X [ ][NMAX], int n)
+\end{verbatim}
+
+This submatrix \verb'X' is the (2,5) block of the matrix \verb'A', of size
+8-by-8.  It consists of the region of \verb'A' in rows 16 to 23 (starting
+at row 2*8) and columns 40 to 47).  Inside the function \verb'func', this
+matrix \verb'X' can be accessed as if it were an \verb'n'-by-\verb'n'
+matrix with rows and columns range from 0 to 7 (or 0 to \verb'n-1').
+That is, the function \verb'func' does not need to be aware that \verb'X' is
+a submatrix of a larger matrix.  All it needs to know is that each row
+of \verb'X' is held in a memory space of size \verb'NMAX'.  The C compiler
+will handle all the index calculations for you.  For example, the entry
+\verb'X[0][0]' is the same as \verb'A[16][40]',
+\verb'X[1][2]' is the same as \verb'A[17][42]', and so on.
+
+Files in \verb'proj1.zip':
+
+\begin{itemize}
+\item \verb'Makefile':  for both Linux and the Mac OSX.  If you test it on
+a Mac, you will need to install XCode, including the command line utilities.
+Testing on a Mac is handy, if you have one, but for
+best timing results, however, please report your final results on ADA.
+
+\item \verb'mult.c': the primary program.  See the \verb'TODO' comments.
+I have written the test driver for you.  All you have to do is write the
+three matrix multiplication methods.
+
+\item \verb'tictoc.c': timing routines.
+
+\item \verb'tictoc.h': include file for using \verb'tictoc'.
+
+\item \verb'mymult.lsf':  job submission file to run the tests on ADA.
+Use the command {\tt bsub < mymult.lsf}.  You may need to adjust the
+run time limit.  To check the status of your jobs use \verb'bjobs'.
+
+\end{itemize}
+
+Write up a short project report discussing your solution and the performance
+obtained by each method.  Which method is fastest overall?  What is the peak
+speedup over the sequential method (note this is not printed by the 
+\verb'mult.c' program)?
+
+Honesty statement:  As Aggies, we follow the Aggie Honor Code.  Period.  This
+is a solo assignment.  Do not share code; I can find it no matter how you
+obscure it.  Trust me on that; I have been writing code, now used by millions,
+since before you were born.  Copying code results in a zero on the project and
+a record in the honor system; don't risk it.
+
+\end{document}
+
